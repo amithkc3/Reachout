@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>user</title>
+</head>
+<body>
+	<img src="static/images/user_7/Screenshot_19.png">
+	{%for u in user%}
+		{%load static%}
+		<img src="/media/{{u.profile.avatar}}" style="height: 100px;width: 100px">
+		<!-- <img src="{%static '/images/avatars/user_8/mario2.png' %}" style="height: 100px;width: 100px"> -->
+		<p>{{u.username}}</p>
+	{%endfor%}
+
+	<p>ADD USER</p>
+	<form method='POST' action='{% url "addUser"%}' enctype="multipart/form-data">
+		{%csrf_token%}
+
+		<input type="text" name="user_name" placeholder="userName"><br>
+		<input type="password" name="password" placeholder="password"><br>
+		<input type="email" name="email" placeholder="email"><br>
+		<label for="avatar">Select Your image preferably (100x100) px JPG|PNG:<input type="file" name="avatar"></label>
+		<input type="submit" name="submit" value="Create User"><br>
+	</form>
+
+	<p>ADD ARTICLE</p>
+	<form method='POST' action='{% url "add_article" %}' enctype="multipart/form-data">
+		{%csrf_token%}
+
+		<input type="text" name="user_name" placeholder="userName"><br>
+		<input type="text" name="title" placeholder="title"><br>
+		<input type="desc" name="desc" placeholder="desc"><br>
+		<label for="image">Select Your image preferably (100x100) px JPG|PNG:<input type="file" name="image"></label>
+		<input type="submit" name="submit" value="Add Article"><br>
+	</form>
+
+
+	<p>AUTHENTICATE</p>
+	<form method='POST' action='{%url "authenticateUser" %}'>
+		{%csrf_token%}
+		<input type="text" name="userName" placeholder="userName"><br>
+		<input type="password" name="password" placeholder="password"><br>
+		<input type="submit" name="submit" value="AUTH"><br>
+	</form>
+	<a href="http://10.24.62.110:8000/media/static/images/avatars/user_2/Screenshot_10.png">http://10.24.62.110:8000/media/static/images/avatars/user_2/Screenshot_10.png</a>
+
+</body>
+</html>
