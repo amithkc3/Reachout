@@ -42,3 +42,9 @@ class Event(models.Model):
 	assiged_By = models.CharField(max_length=100)
 	datetime = models.DateTimeField()
 	organizers = models.ManyToManyField(User)
+
+
+class Investment(models.Model):
+	event_id=models.ForeignKey(Event,on_delete=models.CASCADE)
+	investment_on=models.CharField(max_length=25)
+	amount=models.CharField(max_length=8)

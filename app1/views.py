@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from app1.models import *
 from django.contrib.auth import authenticate
 
+
 # Create your views here.------------------------------------
 @csrf_exempt
 def test(request):
@@ -85,14 +86,15 @@ def add_event(request):
 
 	title = request.POST['title']
 	description = request.POST['description']
-	assigned_by = request.POST['assigned_by']
+	assigned_By = request.POST['assigned_by']
 	datetime = request.POST['datetime']
 	organizers = request.POST['organizers']
 
+#changed assigned_by to assigned_By
 	event = Event.objects.create(
 		title=title,
 		description=description,
-		assigned_by=assigned_by,
+		assigned_By=assigned_By,
 		datetime=datetime)
 
 	for organizer_name in organizers:
@@ -120,3 +122,37 @@ def all_users(request):
 		user_list.append(temp)
 
 	return JsonResponse(user_list,safe=False)
+
+#get details of the investment for a specific event
+def get_event_investment(request):
+	event_id=request.POST['event_id']
+	investments=Investment.objects.get(id=event_id)
+	investment_list=[]
+	for investment in investments:
+		temp={}
+		temp['investment_on']=investment.investment_on
+		temp['amount']=investment.amount
+
+		investment_list.append(temp)
+
+	return JsonResponse(investment_list,safe=False)
+
+#add investments to an event
+def add_investment(request):
+	# event_id=request.POST['event_id']
+	# investments=request.POST['investments']
+	
+	# for investment in investments:
+	# 	new_investment=Investment.objects.create(id=event_id,investment_on=investment.investment_on,amount=investment.amount)
+	# 	new_investment.save()
+	print(request.data)
+	return HttpResponse("added investment")
+
+
+
+
+
+
+
+
+

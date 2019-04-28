@@ -30,4 +30,6 @@ urlpatterns = [
 	path('get_articles/',views.get_articles,name='get_articles'),
 	path('add_event/',views.add_event,name='add_event'),
 	path('all_users/',views.all_users,name='all_users'),
+	path('get_event_investment/',views.get_event_investment,name="event_infvestment"),
+    path('add_investment/',views.add_investment,name="add_investment")
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
