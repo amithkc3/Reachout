@@ -37,11 +37,16 @@ class Article(models.Model):
 
 class Event(models.Model):
 	id = models.AutoField(primary_key=True)
+	event_leader = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,related_name='the_event_lead')
 	title = models.CharField(max_length=100)
 	description = models.TextField()
-	assiged_By = models.CharField(max_length=100)
+	assigned_by = models.CharField(max_length=100)
+	selected_team = models.CharField(default='',max_length=250)
 	datetime = models.DateTimeField()
 	organizers = models.ManyToManyField(User)
+	amount_invested = models.IntegerField(default=0)
+	amount_recieved = models.IntegerField(default=0)
+
 
 
 class Investment(models.Model):
