@@ -215,7 +215,7 @@ def get_my_events(request):
 	for event in events:
 		temp={}
 		temp['event_id'] = event.id
-		temp['event_leader'] = event.team_leader
+		temp['event_leader'] = event.event_leader.username
 		temp['event_title'] = event.title
 		temp['description'] = event.description
 		temp['date'] = event.datetime
@@ -253,7 +253,7 @@ def get_all_events(request):
 	for event in events:
 		temp={}
 		temp['event_id'] = event.id
-		temp['event_leader'] = event.team_leader
+		temp['event_leader'] = event.event_leader.username
 		temp['event_title'] = event.title
 		temp['description'] = event.description
 		temp['date'] = event.datetime
@@ -279,6 +279,7 @@ def get_all_events(request):
 		temp['organizers'] = organizers_list
 
 		event_list_to_send.append(temp)
+		print(event_list_to_send)
 
 	return JsonResponse(event_list_to_send,safe=False)
 
