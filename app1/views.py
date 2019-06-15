@@ -338,20 +338,22 @@ def add_users_to_event(request):
 
 @csrf_exempt
 def remove_users_from_event(request):
+	print(request.POST)
+
 	event_id = request.POST['event_id']
-	organizers_to_remove = request.POST['organizers_to_remove']
+
+	organizers_to_remove = list(map(str,request.POST['organizers_to_remove'][1:-1].split(',')))
 
 	try:
 		event = Event.objects.get(id=event_id)
 		for o in organizers_to_remove:
-			organizer = User.objects.get(username=o)
-			event.organizers.remove(organizer)
-			event.save()
+			organizer = User.objects.get(username=str(o.strip()))
+			if(organizer is not None):
+				event.organizers.remove(organizer)
+				event.save()
 		return HttpResponse(200)
 	except:
 		return HttpResponse(500)
-
-
 
 #get details of the investment for a specific event
 def get_event_investment(request):
