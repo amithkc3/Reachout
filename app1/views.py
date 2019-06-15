@@ -389,11 +389,18 @@ def add_investment(request):
 	print(request.data)
 	return HttpResponse("added investment")
 
-
-
-
-
-
-
-
-
+@csrf_exempt
+def delete_event(request):
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		try:
+			print(request.POST)
+			event_id = request.POST['event_id']
+			event = Event.objects.get(id=event_id)
+			event.delete()
+			print("event deleted")
+			return HttpResponse(200)
+		except:
+			print("and failed")
+			return HttpResponse(500)
+	else:
+		return HttpResponse("Authentication error!!!")

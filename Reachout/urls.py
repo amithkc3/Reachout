@@ -29,6 +29,7 @@ urlpatterns = [
 
 	path('add_article/',views.add_article,name="add_article"),
     path('delete_article/',views.delete_article,name='delete_article'),
+    path('delete_event/', views.delete_event, name='delete_event'),
 	path('get_articles/',views.get_articles,name='get_articles'),
 
 	path('add_event/',views.add_event,name='add_event'),
