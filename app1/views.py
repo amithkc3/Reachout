@@ -193,9 +193,12 @@ def add_event(request):
 				event.save()
 			else:
 				could_not_add.append(organizer_name.strip())		
+				return JsonResponse(406,safe=False)
 		
 		# print(could_not_add)
-		return JsonResponse({"could_not_add":could_not_add},safe=False)
+		# return JsonResponse({"could_not_add":could_not_add},safe=False)
+		return JsonResponse(200,safe=False)
+
 	else:
 		return HttpResponse("Authentication error!!!")
 
@@ -290,7 +293,7 @@ def get_event_details(request):
 	event = Event.objects.get(id=event_id)
 	temp={}
 	temp['event_id'] = event.id
-	temp['event_leader'] = event.team_leader
+	temp['event_leader'] = event.event_leader.username
 	temp['event_title'] = event.title
 	temp['description'] = event.description
 	temp['date'] = event.datetime
@@ -310,20 +313,25 @@ def get_event_details(request):
 		temp2['user_id'] = organizer.id
 		temp2['username'] = organizer.username
 		temp2['profile_picture_url'] = '/media/'+str(organizer.profile.avatar)
+		organizers_list.append(temp2)
+
+	temp['organizers'] = organizers_list
 
 	return JsonResponse(temp,safe=False)
 
 @csrf_exempt
 def add_users_to_event(request):
 	event_id = request.POST['event_id']
-	organizers_to_add = request.POST['organizers_to_add']
+
+	organizers_to_add = list(map(str,request.POST['organizers_to_add'][1:-1].split(',')))
 
 	try:
 		event = Event.objects.get(id=event_id)
 		for o in organizers_to_add:
-			organizer = User.objects.get(username=o)
-			event.organizers.add(organizer)
-			event.save()
+			organizer = User.objects.get(username=str(o.strip()))
+			if(organizer is not None):
+				event.organizers.add(organizer)
+				event.save()
 		return HttpResponse(200)
 	except:
 		return HttpResponse(500)
