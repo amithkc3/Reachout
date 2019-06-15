@@ -76,7 +76,10 @@ def login(request):
 	print("login")
 	auth_info = request.META['HTTP_AUTHORIZATION']
 	username , password = base64.b64decode(auth_info).decode().split(':')
+	print(username)
+	print(password)
 	res = authenticate(username=username,password=password)
+	print(res)
 	if(res is not None):
 		u={}
 		user = User.objects.get(username = username)
@@ -84,6 +87,7 @@ def login(request):
 		u['email'] = user.email
 		u['avatar'] = '/media/' + str(user.profile.avatar)
 		u['group'] = str(user.groups.all()[0])
+		print(u)
 
 		return JsonResponse(u,safe=False)
 	else:
@@ -360,7 +364,15 @@ def remove_users_from_event(request):
 def get_event_investment(request):
 	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
 		event_id=request.POST['event_id']
-		investments=Investment.objects.filter(id=event_id)
+		event = Event.objects.get(id=event_id)
+
+		investments=Investment.objects.filter(event_id=event)
+
+		responseData = {}
+
+		responseData['amount_invested'] = event.amount_invested
+		responseData['amount_recieved'] = event.amount_recieved
+
 		investment_list=[]
 		for investment in investments:
 			temp={}
@@ -369,60 +381,43 @@ def get_event_investment(request):
 
 			investment_list.append(temp)
 
-		return JsonResponse(investment_list,safe=False)
+		responseData['investment_list'] = investment_list
 
-#add investments to an event
-# @csrf_exempt
-# def add_investment(request):
-# 	event_id=request.POST['event_id']
-# 	investments=request.POST['investments']
-	
-# 	i_to_delete = Investment.objects.filter(id=event_id)
-# 	i_to_delete.delete()
-
-# 	total_invested = 0
-
-# 	for investment in investments:
-# 		total_invested += int(investment.amount)
-# 		new_investment=Investment.objects.create(id=event_id,investment_on=investment.investment_on,amount=investment.amount)
-# 		new_investment.save()
-
-# 	e=Event.objects.get(id=event_id)
-# 	e.amount_invested = total_invested
-# 	e.save()
-
-# 	print(request.data)
-# 	return HttpResponse("added investment")
+		return JsonResponse(responseData,safe=False)
 
 @csrf_exempt
 def add_investment(request):
 	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
-		print(request.POST)
+		try:
+			print(request.POST)
 
-		event_id = request.POST['event_id']
-		reason_on = list(map(str,request.POST['investment_on'][1:-1].split(',')))
-		amount_invested = list(map(str,request.POST['amount'][1:-1].split(',')))
-		amount_recieved = request.POST['investment_on_return']
+			event_id = request.POST['event_id']
+			reason_on = list(map(str,request.POST['investment_on'][1:-1].split(',')))
+			amount_invested = list(map(str,request.POST['amount'][1:-1].split(',')))
+			amount_recieved = request.POST['investment_on_return']
 
-		event = Event.objects.get(id=event_id)
+			event = Event.objects.get(id=event_id)
 
-		Investment.objects.filter(event_id=event).delete()
+			Investment.objects.filter(event_id=event).delete()
+			event.amount_invested = 0
 
-		total_invested = 0
-		length = len(reason_on)
+			total_invested = 0
+			length = len(reason_on)
 
-		for x in range(0,length):
-			print(reason_on[x])
-			print(amount_invested[x])
-			total_invested += int(amount_invested[x])
-			new_investment = Investment.objects.create(event_id=event,investment_on=str(reason_on[x]),amount=str(amount_invested[x]))
-			new_investment.save()
+			for x in range(0,length):
+				print(reason_on[x])
+				print(amount_invested[x])
+				total_invested += int(amount_invested[x])
+				new_investment = Investment.objects.create(event_id=event,investment_on=str(reason_on[x]),amount=str(amount_invested[x]))
+				new_investment.save()
 
-		event.amount_invested = total_invested
-		event.amount_recieved = amount_recieved
-		event.save()
+			event.amount_invested = total_invested
+			event.amount_recieved = amount_recieved
+			event.save()
 
-		return HttpResponse(200)
+			return HttpResponse(200)
+		except:
+			return HttpResponse(200)
 	else:
 		return HttpResponse("Authentication error!!!")
 
