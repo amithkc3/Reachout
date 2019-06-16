@@ -53,7 +53,8 @@ def authenticateUser(request):
 		return HttpResponse("200")
 	else:
 		return HttpResponse("404")
-
+		
+@csrf_exempt
 def all_users(request):
 	users = User.objects.all()
 	print(users)
@@ -76,17 +77,24 @@ def login(request):
 	print("login")
 	auth_info = request.META['HTTP_AUTHORIZATION']
 	username , password = base64.b64decode(auth_info).decode().split(':')
-	print(username)
-	print(password)
 	res = authenticate(username=username,password=password)
 	print(res)
 	if(res is not None):
 		u={}
 		user = User.objects.get(username = username)
+		print(user.username)
+		print(user.email)
+		print(user.profile.avatar)
+		print(user.groups.all())
 		u['username'] = user.username
 		u['email'] = user.email
 		u['avatar'] = '/media/' + str(user.profile.avatar)
-		u['group'] = str(user.groups.all()[0])
+		groups = user.groups.all()
+		if len(groups) is not 0:
+			u['group'] = str(user.groups.all()[0])
+		else:
+			u['group'] = ''
+
 		print(u)
 
 		return JsonResponse(u,safe=False)
@@ -140,7 +148,7 @@ def get_articles(request):
 			temp['article_id'] = a.id
 			temp['username'] = str(a.user)
 			# temp['user_profile'] = a.profile.avatar
-			temp['profile_picture_url'] = "/media/"+str(User.objects.all()[1].profile.avatar)
+			temp['profile_picture_url'] = "/media/"+str(User.objects.get(username=a.user).profile.avatar)
 			temp['desc'] = a.description
 			temp['image'] = "/media/"+str(a.image)
 			temp['time_stamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -437,6 +445,32 @@ def delete_event(request):
 			return HttpResponse(200)
 		except:
 			print("and failed")
+			return HttpResponse(500)
+	else:
+		return HttpResponse("Authentication error!!!")
+
+@csrf_exempt
+def get_my_articles(request):
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		try:
+			user_name = request.POST['user_name']
+			
+			articles = User.objects.get(username=user_name).article_set.all()
+			print(articles)
+
+			article_list = []
+			for a in articles:
+				temp={}
+				temp['article_id'] = a.id
+				temp['username'] = str(a.user)
+				temp['profile_picture_url'] = "/media/" + str(User.objects.get(username=user_name).profile.avatar)
+				temp['desc'] = a.description
+				temp['image'] = "/media/" + str(a.image)
+				temp['time_stamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+				article_list.append(temp)
+
+			return JsonResponse(article_list, safe=False)
+		except:
 			return HttpResponse(500)
 	else:
 		return HttpResponse("Authentication error!!!")
