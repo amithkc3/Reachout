@@ -29,17 +29,19 @@ def test(request):
 def listUsers(request):
 	users = User.objects.all()
 	return render(request,'user.html',{'user':users})
-	
-def addUser(request):
-	print(request.FILES)
-	user_name = request.POST['user_name']
-	password = request.POST['password']
-	email = request.POST['email']
-	avatar = request.FILES['avatar']
 
-	user = User.objects.create_user(username=user_name,password=password,email=email)
-	user.profile.avatar = avatar
-	user.save()
+@csrf_exempt	
+def add_user(request):
+	print(request.FILES)
+	print(request.POST)
+	# user_name = request.POST['user_name']
+	# password = request.POST['password']
+	# email = request.POST['email']
+	# avatar = request.FILES['avatar']
+
+	# user = User.objects.create_user(username=user_name,password=password,email=email)
+	# user.profile.avatar = avatar
+	# user.save()
 	return HttpResponse("add")
 
 @csrf_exempt
@@ -111,11 +113,18 @@ def add_article(request):
 		user = User.objects.get(username=request.POST['user_name'])
 		desc = request.POST['desc']
 		image = request.FILES['image']
+		time = request.POST['time_stamp']
 
-		article = Article.objects.create(user=user,description=desc)
+		time_to_save = datetime.datetime.strptime(time,"%Y-%m-%d %H:%M:%S")
+
+		article = Article.objects.create(user=user, description=desc, time_stamp=time_to_save)
+		print(time_to_save)
+		print('-------------------------------')
 		article.image = image
 		article.save()
-		return HttpResponse("added article")
+		print(article.time_stamp)
+		print('-----------------------')
+		return HttpResponse(200)
 	else:
 		return HttpResponse("Authentication error!!!")
 
@@ -151,7 +160,8 @@ def get_articles(request):
 			temp['profile_picture_url'] = "/media/"+str(User.objects.get(username=a.user).profile.avatar)
 			temp['desc'] = a.description
 			temp['image'] = "/media/"+str(a.image)
-			temp['time_stamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+			#temp['time_stamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+			temp['time_stamp'] = a.time_stamp.strftime("%Y-%m-%d %H:%M:%S")
 			article_list.append(temp)
 
 		return JsonResponse(article_list,safe=False)
@@ -456,7 +466,6 @@ def get_my_articles(request):
 			user_name = request.POST['user_name']
 			
 			articles = User.objects.get(username=user_name).article_set.all()
-			print(articles)
 
 			article_list = []
 			for a in articles:
@@ -466,7 +475,7 @@ def get_my_articles(request):
 				temp['profile_picture_url'] = "/media/" + str(User.objects.get(username=user_name).profile.avatar)
 				temp['desc'] = a.description
 				temp['image'] = "/media/" + str(a.image)
-				temp['time_stamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+				temp['time_stamp'] = a.time_stamp.strftime("%Y-%m-%d %H:%M:%S")
 				article_list.append(temp)
 
 			return JsonResponse(article_list, safe=False)
