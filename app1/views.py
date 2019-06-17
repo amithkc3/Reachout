@@ -32,17 +32,16 @@ def listUsers(request):
 
 @csrf_exempt	
 def add_user(request):
-	print(request.FILES)
 	print(request.POST)
-	# user_name = request.POST['user_name']
-	# password = request.POST['password']
-	# email = request.POST['email']
-	# avatar = request.FILES['avatar']
+	user_name = request.POST['user_name']
+	password = request.POST['password']
+	email = request.POST['email']
+	#avatar = request.FILES['image']
 
-	# user = User.objects.create_user(username=user_name,password=password,email=email)
+	user = User.objects.create_user(username=user_name, password=password, email=email)
 	# user.profile.avatar = avatar
-	# user.save()
-	return HttpResponse("add")
+	user.save()
+	return HttpResponse(200)
 
 @csrf_exempt
 def authenticateUser(request):
@@ -67,9 +66,15 @@ def all_users(request):
 		temp['id']=user.profile.id
 		temp['username'] = user.username
 		temp['image'] = '/media/'+str(user.profile.avatar)
+		if user.is_superuser:
+			temp['account_type'] = "superuser"
+		elif user.is_staff:
+			temp['account_type'] = "staff"
+		else:
+			temp['account_type'] = ""
 
 		user_list.append(temp)
-
+	print(user_list)
 	return JsonResponse(user_list,safe=False)
 #------------------------------------------------------------------------------------
 #App side
@@ -84,18 +89,22 @@ def login(request):
 	if(res is not None):
 		u={}
 		user = User.objects.get(username = username)
-		print(user.username)
-		print(user.email)
-		print(user.profile.avatar)
-		print(user.groups.all())
 		u['username'] = user.username
 		u['email'] = user.email
 		u['avatar'] = '/media/' + str(user.profile.avatar)
-		groups = user.groups.all()
-		if len(groups) is not 0:
-			u['group'] = str(user.groups.all()[0])
+		
+		# groups = user.groups.all()
+		# if len(groups) is not 0:
+		# 	u['group'] = str(user.groups.all()[0])
+		# else:
+		# 	u['group'] = ''
+
+		if user.is_superuser:
+			u['account_type'] = "superuser"
+		elif user.is_staff:
+			u['account_type'] = "staff"
 		else:
-			u['group'] = ''
+			u['account_type'] = ""
 
 		print(u)
 
@@ -155,8 +164,7 @@ def get_articles(request):
 		for a in articles:
 			temp={}
 			temp['article_id'] = a.id
-			temp['username'] = str(a.user)
-			# temp['user_profile'] = a.profile.avatar
+			#temp['username'] = str(a.user)
 			temp['profile_picture_url'] = "/media/"+str(User.objects.get(username=a.user).profile.avatar)
 			temp['desc'] = a.description
 			temp['image'] = "/media/"+str(a.image)
