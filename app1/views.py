@@ -36,10 +36,17 @@ def add_user(request):
 	user_name = request.POST['user_name']
 	password = request.POST['password']
 	email = request.POST['email']
+	account = request.POST['account_type'].strip()
 	#avatar = request.FILES['image']
 
-	user = User.objects.create_user(username=user_name, password=password, email=email)
+	user = User.objects.create(username=user_name, password=password, email=email)
 	# user.profile.avatar = avatar
+
+	if account == "superuser":
+		user.is_superuser = True
+	elif account == "staff":
+		user.is_staff = True
+
 	user.save()
 	return HttpResponse(200)
 
@@ -71,7 +78,7 @@ def all_users(request):
 		elif user.is_staff:
 			temp['account_type'] = "staff"
 		else:
-			temp['account_type'] = ""
+			temp['account_type'] = "none"
 
 		user_list.append(temp)
 	print(user_list)
@@ -92,7 +99,7 @@ def login(request):
 		u['username'] = user.username
 		u['email'] = user.email
 		u['avatar'] = '/media/' + str(user.profile.avatar)
-		
+
 		# groups = user.groups.all()
 		# if len(groups) is not 0:
 		# 	u['group'] = str(user.groups.all()[0])
@@ -104,13 +111,13 @@ def login(request):
 		elif user.is_staff:
 			u['account_type'] = "staff"
 		else:
-			u['account_type'] = ""
+			u['account_type'] = "none"
 
 		print(u)
 
 		return JsonResponse(u,safe=False)
 	else:
-		return HttpResponse("404")
+		return HttpResponse("500")
 
 
 
@@ -164,7 +171,7 @@ def get_articles(request):
 		for a in articles:
 			temp={}
 			temp['article_id'] = a.id
-			#temp['username'] = str(a.user)
+			temp['username'] = str(a.user)
 			temp['profile_picture_url'] = "/media/"+str(User.objects.get(username=a.user).profile.avatar)
 			temp['desc'] = a.description
 			temp['image'] = "/media/"+str(a.image)
@@ -279,11 +286,50 @@ def get_my_events(request):
 
 @csrf_exempt
 def get_all_events(request):
-	print(request.POST)
-	events = Event.objects.all()
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		print(request.POST)
+		events = Event.objects.all()
 
-	event_list_to_send = []
-	for event in events:
+		event_list_to_send = []
+		for event in events:
+			temp={}
+			temp['event_id'] = event.id
+			temp['event_leader'] = event.event_leader.username
+			temp['event_title'] = event.title
+			temp['description'] = event.description
+			temp['date'] = event.datetime
+
+			team_list=[]
+			team = event.selected_team.split(',')
+			for t in team:
+				team_list.append(t.strip())
+
+			temp['team_name'] = team_list
+			temp['assigned_by'] = event.assigned_by
+			temp['investment_amount'] = event.amount_invested
+			temp['investment_return'] = event.amount_recieved
+			organizers_list = []
+			for organizer in event.organizers.all():
+				temp2={}
+				temp2['user_id'] = organizer.id
+				temp2['username'] = organizer.username
+				temp2['profile_picture_url'] = '/media/'+str(organizer.profile.avatar)
+
+				organizers_list.append(temp2)
+
+			temp['organizers'] = organizers_list
+
+			event_list_to_send.append(temp)
+			print(event_list_to_send)
+
+		return JsonResponse(event_list_to_send,safe=False)
+
+@csrf_exempt
+def get_event_details(request):
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		event_id = request.POST['event_id']
+		print("---------------Event-id = "+event_id)
+		event = Event.objects.get(id=event_id)
 		temp={}
 		temp['event_id'] = event.id
 		temp['event_leader'] = event.event_leader.username
@@ -306,84 +352,55 @@ def get_all_events(request):
 			temp2['user_id'] = organizer.id
 			temp2['username'] = organizer.username
 			temp2['profile_picture_url'] = '/media/'+str(organizer.profile.avatar)
-
 			organizers_list.append(temp2)
 
 		temp['organizers'] = organizers_list
 
-		event_list_to_send.append(temp)
-		print(event_list_to_send)
-
-	return JsonResponse(event_list_to_send,safe=False)
-
-@csrf_exempt
-def get_event_details(request):
-	event_id = request.POST['event_id']
-	print("---------------Event-id = "+event_id)
-	event = Event.objects.get(id=event_id)
-	temp={}
-	temp['event_id'] = event.id
-	temp['event_leader'] = event.event_leader.username
-	temp['event_title'] = event.title
-	temp['description'] = event.description
-	temp['date'] = event.datetime
-
-	team_list=[]
-	team = event.selected_team.split(',')
-	for t in team:
-		team_list.append(t.strip())
-
-	temp['team_name'] = team_list
-	temp['assigned_by'] = event.assigned_by
-	temp['investment_amount'] = event.amount_invested
-	temp['investment_return'] = event.amount_recieved
-	organizers_list = []
-	for organizer in event.organizers.all():
-		temp2={}
-		temp2['user_id'] = organizer.id
-		temp2['username'] = organizer.username
-		temp2['profile_picture_url'] = '/media/'+str(organizer.profile.avatar)
-		organizers_list.append(temp2)
-
-	temp['organizers'] = organizers_list
-
-	return JsonResponse(temp,safe=False)
+		return JsonResponse(temp,safe=False)
+	else:
+		return HttpResponse("Authentication error!!!")
 
 @csrf_exempt
 def add_users_to_event(request):
-	event_id = request.POST['event_id']
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		event_id = request.POST['event_id']
 
-	organizers_to_add = list(map(str,request.POST['organizers_to_add'][1:-1].split(',')))
+		organizers_to_add = list(map(str,request.POST['organizers_to_add'][1:-1].split(',')))
 
-	try:
-		event = Event.objects.get(id=event_id)
-		for o in organizers_to_add:
-			organizer = User.objects.get(username=str(o.strip()))
-			if(organizer is not None):
-				event.organizers.add(organizer)
-				event.save()
-		return HttpResponse(200)
-	except:
-		return HttpResponse(500)
+		try:
+			event = Event.objects.get(id=event_id)
+			for o in organizers_to_add:
+				organizer = User.objects.get(username=str(o.strip()))
+				if(organizer is not None):
+					event.organizers.add(organizer)
+					event.save()
+			return HttpResponse(200)
+		except:
+			return HttpResponse(500)
+	else:
+		return HttpResponse("Authentication error!!!")
 
 @csrf_exempt
 def remove_users_from_event(request):
-	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		print(request.POST)
 
-	event_id = request.POST['event_id']
+		event_id = request.POST['event_id']
 
-	organizers_to_remove = list(map(str,request.POST['organizers_to_remove'][1:-1].split(',')))
+		organizers_to_remove = list(map(str,request.POST['organizers_to_remove'][1:-1].split(',')))
 
-	try:
-		event = Event.objects.get(id=event_id)
-		for o in organizers_to_remove:
-			organizer = User.objects.get(username=str(o.strip()))
-			if(organizer is not None):
-				event.organizers.remove(organizer)
-				event.save()
-		return HttpResponse(200)
-	except:
-		return HttpResponse(500)
+		try:
+			event = Event.objects.get(id=event_id)
+			for o in organizers_to_remove:
+				organizer = User.objects.get(username=str(o.strip()))
+				if(organizer is not None):
+					event.organizers.remove(organizer)
+					event.save()
+			return HttpResponse(200)
+		except:
+			return HttpResponse(500)
+	else:
+		return HttpResponse("Authentication error!!!")
 
 #get details of the investment for a specific event
 @csrf_exempt
@@ -410,6 +427,8 @@ def get_event_investment(request):
 		responseData['investment_list'] = investment_list
 
 		return JsonResponse(responseData,safe=False)
+	else:
+		return HttpResponse("Authentication error!!!")
 
 @csrf_exempt
 def add_investment(request):
