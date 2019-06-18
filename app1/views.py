@@ -33,13 +33,21 @@ def listUsers(request):
 @csrf_exempt	
 def add_user(request):
 	print(request.POST)
-	user_name = request.POST['user_name']
-	password = request.POST['password']
-	email = request.POST['email']
+	user_name = request.POST['user_name'].strip()
+	password = request.POST['password'].strip()
+	email = request.POST['email'].strip()
 	account = request.POST['account_type'].strip()
 	#avatar = request.FILES['image']
 
-	user = User.objects.create(username=user_name, password=password, email=email)
+	existing_users = User.objects.all()
+	for u in existing_users:
+		name = u.username.strip()
+		if user_name == name:
+			print("409 Conflict : username already exist...")
+			return HttpResponse(409)
+
+	user = User.objects.create(username=user_name, email=email)
+	user.set_password(password)
 	# user.profile.avatar = avatar
 
 	if account == "superuser":
@@ -91,6 +99,7 @@ def login(request):
 	print("login")
 	auth_info = request.META['HTTP_AUTHORIZATION']
 	username , password = base64.b64decode(auth_info).decode().split(':')
+	print(username + ":" + password)
 	res = authenticate(username=username,password=password)
 	print(res)
 	if(res is not None):
