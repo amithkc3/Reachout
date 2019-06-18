@@ -303,7 +303,11 @@ def get_all_events(request):
 		for event in events:
 			temp={}
 			temp['event_id'] = event.id
-			temp['event_leader'] = event.event_leader.username
+			leader = event.event_leader
+			if leader is None:
+				temp['event_leader'] = "Not Available"
+			else:
+				temp['event_leader'] = event.event_leader.username
 			temp['event_title'] = event.title
 			temp['description'] = event.description
 			temp['date'] = event.datetime
