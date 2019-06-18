@@ -37,6 +37,7 @@ class Article(models.Model):
 	user = models.ForeignKey(User,on_delete=models.SET_NULL,null=True)
 	description = models.TextField()
 	image = models.ImageField(upload_to=article_images,null=True,blank=True)
+	time_stamp = models.DateTimeField()
 
 	def delete(self,*args,**kwargs):
 		self.image.delete()
