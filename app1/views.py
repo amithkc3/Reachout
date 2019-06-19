@@ -39,15 +39,12 @@ def add_user(request):
 	account = request.POST['account_type'].strip()
 	#avatar = request.FILES['image']
 
-	existing_users = User.objects.all()
-	for u in existing_users:
-		name = u.username.strip()
-		if user_name == name:
-			print("409 Conflict : username already exist...")
-			return HttpResponse(409)
+	if len(User.objects.filter(username=user_name)) > 0:
+		print("409 Conflict : username already exist...")
+		return HttpResponse(409)
 
-	user = User.objects.create(username=user_name, email=email)
-	user.set_password(password)
+	user = User.objects.create_user(username=user_name, password=password, email=email)
+	# user.set_password(password)
 	# user.profile.avatar = avatar
 
 	if account == "superuser":
