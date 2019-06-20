@@ -18,6 +18,10 @@ class Profile(models.Model):
     location = models.CharField(max_length=30, blank=True)
     avatar = models.ImageField(upload_to=user_directory_path,null=True,blank=True)
 
+    def delete(self,*args,**kwargs):
+    	self.avatar.delete()
+    	super().delete(*args,**kwargs)
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -34,6 +38,11 @@ class Article(models.Model):
 	description = models.TextField()
 	image = models.ImageField(upload_to=article_images,null=True,blank=True)
 	time_stamp = models.DateTimeField()
+
+	def delete(self,*args,**kwargs):
+		self.image.delete()
+		print("delete--------------------------------------")
+		super().delete(*args,**kwargs)
 
 
 class Event(models.Model):
