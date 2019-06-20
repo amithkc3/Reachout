@@ -565,3 +565,33 @@ def update_user_details(request):
 		return JsonResponse(u,safe=False)
 	else:
 		return HttpResponse(401)
+
+@csrf_exempt
+def get_user_details(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		user_name = request.POST['username'].strip()
+	
+		user = User.objects.get(username=user_name)
+
+		u={}
+		u['username'] = user.username
+		u['first_name'] = user.first_name
+		u['last_name'] = user.last_name
+		u['email'] = user.email
+		u['phone'] = user.profile.phone
+		u['address'] = user.profile.location
+		u['bio'] = user.profile.bio
+		u['avatar'] = '/media/' + str(user.profile.avatar)
+		if user.is_superuser:
+			u['account_type'] = "superuser"
+		elif user.is_staff:
+			u['account_type'] = "staff"
+		else:
+			u['account_type'] = "none"
+
+		print(u)
+
+		return JsonResponse(u,safe=False)
+	else:
+		return HttpResponse(401)
