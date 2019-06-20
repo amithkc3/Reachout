@@ -520,3 +520,48 @@ def get_my_articles(request):
 			return HttpResponse(500)
 	else:
 		return HttpResponse("Authentication error!!!")
+
+@csrf_exempt
+def update_user_details(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		requested_username = request.POST['requested_user'].strip()
+		user_name = request.POST['username'].strip()
+		first_name = request.POST['first_name'].strip()
+		last_name = request.POST['last_name'].strip()
+		phone = request.POST['phone'].strip()
+		email = request.POST['email'].strip()
+		address = request.POST['address'].strip()
+		bio = request.POST['bio'].strip()
+
+		user = User.objects.get(username=requested_username)
+
+		if len(User.objects.exclude(username=requested_username).filter(username=user_name)):
+			print("409 Conflict : username already exist...")
+			return HttpResponse(409)
+
+		user.username = user_name
+		user.first_name = first_name
+		user.last_name = last_name
+		user.email = email
+		user.profile.phone = phone
+		user.profile.location = address
+		user.profile.bio = bio
+		user.save()
+
+		u={}
+		u['username'] = user.username
+		u['email'] = user.email
+		u['avatar'] = '/media/' + str(user.profile.avatar)
+		if user.is_superuser:
+			u['account_type'] = "superuser"
+		elif user.is_staff:
+			u['account_type'] = "staff"
+		else:
+			u['account_type'] = "none"
+
+		print(u)
+
+		return JsonResponse(u,safe=False)
+	else:
+		return HttpResponse(401)
