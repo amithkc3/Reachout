@@ -106,12 +106,6 @@ def login(request):
 		u['email'] = user.email
 		u['avatar'] = '/media/' + str(user.profile.avatar)
 
-		# groups = user.groups.all()
-		# if len(groups) is not 0:
-		# 	u['group'] = str(user.groups.all()[0])
-		# else:
-		# 	u['group'] = ''
-
 		if user.is_superuser:
 			u['account_type'] = "superuser"
 		elif user.is_staff:
@@ -536,7 +530,7 @@ def update_user_details(request):
 
 		user = User.objects.get(username=requested_username)
 
-		if len(User.objects.exclude(username=requested_username).filter(username=user_name)):
+		if len(User.objects.exclude(username=requested_username).filter(username=user_name)) > 0:
 			print("409 Conflict : username already exist...")
 			return HttpResponse(409)
 
@@ -593,5 +587,20 @@ def get_user_details(request):
 		print(u)
 
 		return JsonResponse(u,safe=False)
+	else:
+		return HttpResponse(401)
+
+@csrf_exempt
+def update_user_profile_picture(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		user_name = request.POST['user_name'].strip()
+		image = request.FILES['image']
+	
+		user = User.objects.get(username=user_name)
+
+		user.profile.avatar = image
+		user.save()
+		return HttpResponse(200)
 	else:
 		return HttpResponse(401)
