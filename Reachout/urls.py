@@ -29,6 +29,7 @@ urlpatterns = [
     path('update_user_details/', views.update_user_details, name='update_user_details'),
     path('get_user_details/', views.get_user_details, name='get_user_details'),
     path('update_user_profile_picture/', views.update_user_profile_picture, name='update_user_profile_picture'),
+    path('update_password/', views.update_password, name='update_password'),
 
 	path('add_article/',views.add_article,name="add_article"),
     path('delete_article/',views.delete_article,name='delete_article'),

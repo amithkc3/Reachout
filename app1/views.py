@@ -604,3 +604,19 @@ def update_user_profile_picture(request):
 		return HttpResponse(200)
 	else:
 		return HttpResponse(401)
+
+@csrf_exempt
+def update_password(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		user_name = request.POST['username'].strip()
+		password = request.POST['password'].strip()
+
+		user = User.objects.get(username=user_name)
+
+		user.set_password(password)
+		user.save()
+
+		return HttpResponse(200)
+	else:
+		return HttpResponse(401)
