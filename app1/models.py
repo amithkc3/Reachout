@@ -16,6 +16,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500, blank=True)
     location = models.CharField(max_length=30, blank=True)
+    phone = models.CharField(max_length=15, blank=True)
     avatar = models.ImageField(upload_to=user_directory_path,null=True,blank=True)
 
     def delete(self,*args,**kwargs):

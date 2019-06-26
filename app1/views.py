@@ -33,13 +33,18 @@ def listUsers(request):
 @csrf_exempt	
 def add_user(request):
 	print(request.POST)
-	user_name = request.POST['user_name']
-	password = request.POST['password']
-	email = request.POST['email']
+	user_name = request.POST['user_name'].strip()
+	password = request.POST['password'].strip()
+	email = request.POST['email'].strip()
 	account = request.POST['account_type'].strip()
 	#avatar = request.FILES['image']
 
-	user = User.objects.create(username=user_name, password=password, email=email)
+	if len(User.objects.filter(username=user_name)) > 0:
+		print("409 Conflict : username already exist...")
+		return HttpResponse(409)
+
+	user = User.objects.create_user(username=user_name, password=password, email=email)
+	# user.set_password(password)
 	# user.profile.avatar = avatar
 
 	if account == "superuser":
@@ -91,6 +96,7 @@ def login(request):
 	print("login")
 	auth_info = request.META['HTTP_AUTHORIZATION']
 	username , password = base64.b64decode(auth_info).decode().split(':')
+	print(username + ":" + password)
 	res = authenticate(username=username,password=password)
 	print(res)
 	if(res is not None):
@@ -99,12 +105,6 @@ def login(request):
 		u['username'] = user.username
 		u['email'] = user.email
 		u['avatar'] = '/media/' + str(user.profile.avatar)
-
-		# groups = user.groups.all()
-		# if len(groups) is not 0:
-		# 	u['group'] = str(user.groups.all()[0])
-		# else:
-		# 	u['group'] = ''
 
 		if user.is_superuser:
 			u['account_type'] = "superuser"
@@ -294,7 +294,11 @@ def get_all_events(request):
 		for event in events:
 			temp={}
 			temp['event_id'] = event.id
-			temp['event_leader'] = event.event_leader.username
+			leader = event.event_leader
+			if leader is None:
+				temp['event_leader'] = "Not Available"
+			else:
+				temp['event_leader'] = event.event_leader.username
 			temp['event_title'] = event.title
 			temp['description'] = event.description
 			temp['date'] = event.datetime
@@ -510,3 +514,109 @@ def get_my_articles(request):
 			return HttpResponse(500)
 	else:
 		return HttpResponse("Authentication error!!!")
+
+@csrf_exempt
+def update_user_details(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		requested_username = request.POST['requested_user'].strip()
+		user_name = request.POST['username'].strip()
+		first_name = request.POST['first_name'].strip()
+		last_name = request.POST['last_name'].strip()
+		phone = request.POST['phone'].strip()
+		email = request.POST['email'].strip()
+		address = request.POST['address'].strip()
+		bio = request.POST['bio'].strip()
+
+		user = User.objects.get(username=requested_username)
+
+		if len(User.objects.exclude(username=requested_username).filter(username=user_name)) > 0:
+			print("409 Conflict : username already exist...")
+			return HttpResponse(409)
+
+		user.username = user_name
+		user.first_name = first_name
+		user.last_name = last_name
+		user.email = email
+		user.profile.phone = phone
+		user.profile.location = address
+		user.profile.bio = bio
+		user.save()
+
+		u={}
+		u['username'] = user.username
+		u['email'] = user.email
+		u['avatar'] = '/media/' + str(user.profile.avatar)
+		if user.is_superuser:
+			u['account_type'] = "superuser"
+		elif user.is_staff:
+			u['account_type'] = "staff"
+		else:
+			u['account_type'] = "none"
+
+		print(u)
+
+		return JsonResponse(u,safe=False)
+	else:
+		return HttpResponse(401)
+
+@csrf_exempt
+def get_user_details(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		user_name = request.POST['username'].strip()
+	
+		user = User.objects.get(username=user_name)
+
+		u={}
+		u['username'] = user.username
+		u['first_name'] = user.first_name
+		u['last_name'] = user.last_name
+		u['email'] = user.email
+		u['phone'] = user.profile.phone
+		u['address'] = user.profile.location
+		u['bio'] = user.profile.bio
+		u['avatar'] = '/media/' + str(user.profile.avatar)
+		if user.is_superuser:
+			u['account_type'] = "superuser"
+		elif user.is_staff:
+			u['account_type'] = "staff"
+		else:
+			u['account_type'] = "none"
+
+		print(u)
+
+		return JsonResponse(u,safe=False)
+	else:
+		return HttpResponse(401)
+
+@csrf_exempt
+def update_user_profile_picture(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		user_name = request.POST['user_name'].strip()
+		image = request.FILES['image']
+	
+		user = User.objects.get(username=user_name)
+
+		user.profile.avatar = image
+		user.save()
+		return HttpResponse(200)
+	else:
+		return HttpResponse(401)
+
+@csrf_exempt
+def update_password(request):
+	print(request.POST)
+	if(custom_authenticate(request.META['HTTP_AUTHORIZATION'])):
+		user_name = request.POST['username'].strip()
+		password = request.POST['password'].strip()
+
+		user = User.objects.get(username=user_name)
+
+		user.set_password(password)
+		user.save()
+
+		return HttpResponse(200)
+	else:
+		return HttpResponse(401)
