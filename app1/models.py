@@ -8,7 +8,7 @@ def user_directory_path(instance, filename):
 	return 'static/images/avatars/user_{0}/{1}'.format(instance.id, filename)
 
 def article_images(instance,filename):
-	return 'static/images/articles/article_{0}/{1}'.format(instance.id,filename)
+	return 'static/images/articles/article_{0}_{1}'.format(instance.id,filename)
 
 #extending user model
 class Profile(models.Model):
